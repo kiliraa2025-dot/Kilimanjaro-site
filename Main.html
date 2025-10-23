@@ -1,41 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kilimanjaro</title>
-  <link rel="icon" type="images/kili_logo.png" href="images/kili_logo.png" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kilimanjaro</title>
+<link rel="icon" type="images/kili_logo.png" href="images/kili_logo.png" />
 
-  <style>
-    /* RESET */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-    html, body {
-      font-family: Arial, sans-serif;
-      height: 100%;
-      overflow-x: hidden;
-    }
+<style>
+  /* RESET & existing styles */
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { font-family: Arial, sans-serif; height: 100%; overflow-x:hidden; }
+  body { background-color:#4e0506; position:relative; color:white; }
+  body::before {
+    content:"";
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    backdrop-filter: blur(10px);
+    background-color: rgba(128,0,0,0.5);
+    z-index:-1;
+  }
 
-    body {
-      background-color: #4e0506;
-      position: relative;
-      color: white;
-    }
-
-    /* Blurred overlay */
-    body::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      backdrop-filter: blur(10px);
-      background-color: rgba(128, 0, 0, 0.5); /* Maroon overlay */
-      z-index: -1;
-    }
+  /* HEADER, Title, Carousel, Nav, Description, Image Grid, Map, Footer - keep your previous CSS here */
 
     /* HEADER */
     #header {
@@ -328,9 +317,60 @@
         height: 300px;
       }
     }
-  </style>
 
-  <!-- FontAwesome for social icons -->
+  /* Popup Modal Styles */
+  #announcement-popup {
+    display:none; 
+    position:fixed; 
+    top:0; left:0; 
+    width:100%; height:100%; 
+    background-color: rgba(0,0,0,0.6); 
+    z-index:999; 
+    overflow:auto;
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    padding: 20px;
+  }
+
+  #announcement-popup .popup-content {
+    background-color: #4e0506;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    color: white;
+    text-align: left;
+    position: relative;
+  }
+
+  #announcement-popup h2 {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 24px;
+  }
+
+  #announcement-popup p {
+    margin: 10px 0;
+    line-height: 1.4;
+    font-size: 18px;
+  }
+
+  #announcement-popup .close-popup {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+  }
+
+  #announcement-popup .close-popup:hover {
+    color: #ccc;
+  }
+</style>
+
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -389,7 +429,7 @@
     <a href="KiliSports.html"><button>KiliSports</button></a>
     <a href="Previous_Events.html"><button>Previous Events</button></a>
     <a href="Upcoming_Events.html"><button>Upcoming Events</button></a>
-    <a href="Donation.html"><button class="donate">Donate</button></a>
+    <a href=""><button class="donate">Donate</button></a>
   </nav>
 
   <!-- Description -->
@@ -400,7 +440,7 @@
   <!-- Image Grid -->
   <div id="image-grid">
     <img src="images/spelling_bee.png" alt="Kilicares Image">
-    <img src="images/HKs/panel_photo.png" alt="Kilijaro Image 1">
+    <img src="images/outside.png" alt="Kilijaro Image 1">
     <img src="images/kilisports.png" alt="Kilijaro Image 2">
     <img src="images/res_battle.png" alt="Kilijaro Image 3">
   </div>
@@ -408,6 +448,15 @@
   <!-- Google Map -->
   <div id="map-container">
 <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3580.186680610193!2d28.0137279!3d-26.1906049!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x1e950bf6ddde22f1%3A0x957f9acb5edc5ee9!2sKilimanjaro%20mens%20residence!5e0!3m2!1sen!2sza!4v1756740603257!5m2!1sen!2sza" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+
+  <!-- Announcement Popup -->
+  <div id="announcement-popup">
+    <div class="popup-content">
+      <span class="close-popup" id="close-announcement">&times;</span>
+      <h2>Announcements</h2>
+      <div id="popup-announcements"></div>
+    </div>
   </div>
 
   <!-- Footer -->
@@ -420,39 +469,70 @@
     </a>
   </footer>
 
-  <script>
-    // Toggle hamburger menu dropdown
-    function toggleMenu() {
-      const dropdown = document.getElementById('dropdown-menu');
-      dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+<script>
+  // Firebase Config
+  const firebaseConfig = {
+    apiKey: "AIzaSyDhl8-z01pNxtiL6kWwmla79OFzsOamHnA",
+    authDomain: "kilimanjaro-28f6d.firebaseapp.com",
+    projectId: "kilimanjaro-28f6d",
+    storageBucket: "kilimanjaro-28f6d.firebasestorage.app",
+    messagingSenderId: "1034940817803",
+    appId: "1:1034940817803:web:51be29aeff42e296870f8e",
+    measurementId: "G-BEL0CY2F31"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // Fetch announcements (last 3 days)
+  const popup = document.getElementById('announcement-popup');
+  const popupContent = document.getElementById('popup-announcements');
+  const closeBtn = document.getElementById('close-announcement');
+
+  db.collection("announcements").orderBy("timestamp","desc").get().then(snapshot => {
+    const now = new Date();
+    let hasAnnouncements = false;
+
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const created = data.timestamp.toDate();
+      const diffDays = (now - created)/(1000*60*60*24);
+      if(diffDays <= 3){
+        hasAnnouncements = true;
+        const p = document.createElement('p');
+        p.textContent = data.text;
+        popupContent.appendChild(p);
+      }
+    });
+
+    if(hasAnnouncements){
+      popup.style.display = "flex";
     }
+  });
 
-    // Carousel functionality
-    const track = document.getElementById('carousel-track');
-    const slides = Array.from(track.children);
-    let currentIndex = 0;
+  closeBtn.onclick = () => { popup.style.display = "none"; };
+  window.onclick = (e) => { if(e.target == popup) popup.style.display = "none"; };
 
-    function updateCarousel() {
-      const slideWidth = slides[0].getBoundingClientRect().width;
-      track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
-    }
+  // Hamburger Menu
+  function toggleMenu(){
+    const dropdown = document.getElementById('dropdown-menu');
+    dropdown.style.display = dropdown.style.display==='block'?'none':'block';
+  }
 
-    function nextSlide() {
-      currentIndex = (currentIndex + 1) % slides.length;
-      updateCarousel();
-    }
+  // Carousel functionality
+  const track = document.getElementById('carousel-track');
+  const slides = Array.from(track.children);
+  let currentIndex = 0;
 
-    function prevSlide() {
-      currentIndex = (currentIndex - 1 + slides.length) % slides.length;
-      updateCarousel();
-    }
+  function updateCarousel() {
+    const slideWidth = slides[0].getBoundingClientRect().width;
+    track.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+  }
 
-    window.addEventListener('resize', updateCarousel);
-    updateCarousel();
-  </script>
+  function nextSlide() { currentIndex = (currentIndex + 1) % slides.length; updateCarousel(); }
+  function prevSlide() { currentIndex = (currentIndex - 1 + slides.length) % slides.length; updateCarousel(); }
+
+  window.addEventListener('resize', updateCarousel);
+  updateCarousel();
+</script>
 </body>
 </html>
-
-
-
-
